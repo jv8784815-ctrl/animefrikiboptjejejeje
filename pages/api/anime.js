@@ -1,7 +1,6 @@
 // pages/api/anime.js
 import { NextApiRequest, NextApiResponse } from 'next';
 
-// URL de tu Gist donde se guarda la URL de cloudflared
 const GIST_RAW_URL = 'https://gist.githubusercontent.com/jv8784815-ctrl/c520f9db26b1b30f2d58cd761921ed76/raw/anime-tunnel.json';
 
 let cachedBaseUrl = null;
@@ -15,7 +14,7 @@ async function getBackendUrl() {
   }
 
   try {
-    const res = await fetch(GIST_RAW_URL, { next: { revalidate: 300 } }); // 5 minutos cacheo
+    const res = await fetch(GIST_RAW_URL, { next: { revalidate: 300 } });
     if (!res.ok) throw new Error(`Gist error: ${res.status}`);
     const data = await res.json();
     const baseUrl = data.tunnel?.trimEnd('/');
@@ -34,7 +33,7 @@ async function getBackendUrl() {
   }
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req, res) {
   try {
     const backendBaseUrl = await getBackendUrl();
     const { path = [] } = req.query;
@@ -45,7 +44,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       method: req.method,
       headers: {
         ...req.headers,
-        // Evita enviar encabezados problemáticos
         connection: undefined,
         host: undefined,
         cookie: undefined,
@@ -55,7 +53,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const data = await proxyRes.json();
 
-    // Reenviar headers importantes
     res.status(proxyRes.status).json(data);
   } catch (error) {
     console.error('[proxy] Error:', error.message);
